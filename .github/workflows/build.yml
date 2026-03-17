@@ -18,6 +18,9 @@ jobs:
       - name: Setup MSBuild (VS2022)
         uses: microsoft/setup-msbuild@v2
 
+      - name: Setup MSVC environment
+        uses: ilammy/msvc-dev-cmd@v1
+
       # Optional: show exact compiler version (useful for debugging mismatch)
       - name: Print MSVC version
         shell: cmd
