@@ -1,6 +1,10 @@
 cmake_minimum_required (VERSION 3.2.0)
 project (DiscordRPC)
 
+if(MSVC)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
+
 include(GNUInstallDirs)
 
 option(BUILD_EXAMPLES "Build example apps" ON)
