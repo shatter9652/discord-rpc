@@ -1,7 +1,7 @@
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
 option(ENABLE_IO_THREAD "Start up a separate I/O thread, otherwise I'd need to call an update function" ON)
-option(USE_STATIC_CRT "Use /MT[d] for dynamic library" OFF)
+option(USE_STATIC_CRT "Use /MT[d] for dynamic library" ON)
 option(WARNINGS_AS_ERRORS "When enabled, compiles with `-Werror` (on *nix platforms)." OFF)
 
 set(CMAKE_CXX_STANDARD 14)
