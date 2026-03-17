@@ -2,6 +2,10 @@ name: Nightly Releases
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
 
 permissions:
   contents: write
@@ -15,49 +19,46 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup MSBuild (VS2022)
+      - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
       - name: Setup MSVC environment
         uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
 
-      # Optional: show exact compiler version (useful for debugging mismatch)
       - name: Print MSVC version
         shell: cmd
         run: |
           cl
 
-      - name: Configure CMake (VS2022 + v143)
-        run: >
-          cmake -S . -B build
-          -G "Visual Studio 17 2022"
-          -A x64
-          -T v143
-          -DBUILD_EXAMPLES=OFF
+      - name: Configure CMake
+        shell: cmd
+        run: |
+          cmake -S . -B build -G "Visual Studio 17 2022" -A x64 -T v143 -DBUILD_EXAMPLES=OFF -DBUILD_CLANGFORMAT=OFF
 
       - name: Build
-        run: >
+        shell: cmd
+        run: |
           cmake --build build --config Release
 
-      - name: Locate output
-        shell: pwsh
+      - name: Show built libs
+        shell: powershell
         run: |
-          Get-ChildItem -Recurse build -Filter *.lib
+          Get-ChildItem -Recurse build -Filter *.lib | Select-Object FullName
 
       - name: Prepare package
-        shell: pwsh
+        shell: powershell
         run: |
           New-Item -ItemType Directory -Force -Path release | Out-Null
-
-          # Copy the built lib (adjust if path differs)
           Copy-Item "build\src\Release\discord-rpc.lib" "release\discord-rpc.lib"
+          Copy-Item "include\discord_rpc.h" "release\discord_rpc.h"
+          Copy-Item "include\discord_register.h" "release\discord_register.h"
 
-          # Headers
-          Copy-Item "include\discord_rpc.h" "release\"
-          Copy-Item "include\discord_register.h" "release\"
-
-      - name: Archive
-        run: 7z a -tzip discord-rpc-windows-x64.zip .\release\*
+      - name: Create zip
+        shell: cmd
+        run: |
+          7z a -tzip discord-rpc-windows-x64.zip .\release\*
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -73,8 +74,9 @@ jobs:
           tag_name: nightly
           name: Nightly discord-rpc Release
           body: |
-            Built with Visual Studio 2022 (v17.14) using MSVC v143 (~14.44).
-            Matches MinecraftConsoles toolchain to avoid C1047.
+            Built with Visual Studio 2022 / MSVC v143 14.44.x for x64.
           files: |
             discord-rpc-windows-x64.zip
             release/discord-rpc.lib
+            release/discord_rpc.h
+            release/discord_register.h
