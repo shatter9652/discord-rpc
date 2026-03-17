@@ -15,7 +15,9 @@ file(GLOB_RECURSE ALL_SOURCE_FILES
 # Set CLANG_FORMAT_SUFFIX if you are using custom clang-format, e.g. clang-format-5.0
 find_program(CLANG_FORMAT_CMD clang-format${CLANG_FORMAT_SUFFIX})
 
-if (CLANG_FORMAT_CMD)
+option(BUILD_CLANGFORMAT "Build clangformat target" OFF)
+
+if (CLANG_FORMAT_CMD AND BUILD_CLANGFORMAT)
     add_custom_target(
         clangformat
         COMMAND ${CLANG_FORMAT_CMD}
@@ -24,7 +26,7 @@ if (CLANG_FORMAT_CMD)
         DEPENDS
         ${ALL_SOURCE_FILES}
     )
-endif(CLANG_FORMAT_CMD)
+endif()
 
 # thirdparty stuff
 execute_process(
