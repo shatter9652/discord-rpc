@@ -1,0 +1,77 @@
+name: Nightly Releases
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build discord-rpc (VS17.14 / v143)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup MSBuild (VS2022)
+        uses: microsoft/setup-msbuild@v2
+
+      # Optional: show exact compiler version (useful for debugging mismatch)
+      - name: Print MSVC version
+        shell: cmd
+        run: |
+          cl
+
+      - name: Configure CMake (VS2022 + v143)
+        run: >
+          cmake -S . -B build
+          -G "Visual Studio 17 2022"
+          -A x64
+          -T v143
+          -DBUILD_EXAMPLES=OFF
+
+      - name: Build
+        run: >
+          cmake --build build --config Release
+
+      - name: Locate output
+        shell: pwsh
+        run: |
+          Get-ChildItem -Recurse build -Filter *.lib
+
+      - name: Prepare package
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path release | Out-Null
+
+          # Copy the built lib (adjust if path differs)
+          Copy-Item "build\src\Release\discord-rpc.lib" "release\discord-rpc.lib"
+
+          # Headers
+          Copy-Item "include\discord_rpc.h" "release\"
+          Copy-Item "include\discord_register.h" "release\"
+
+      - name: Archive
+        run: 7z a -tzip discord-rpc-windows-x64.zip .\release\*
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: discord-rpc-windows-x64
+          path: release/*
+
+      - name: Update nightly release
+        uses: andelf/nightly-release@main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: nightly
+          name: Nightly discord-rpc Release
+          body: |
+            Built with Visual Studio 2022 (v17.14) using MSVC v143 (~14.44).
+            Matches MinecraftConsoles toolchain to avoid C1047.
+          files: |
+            discord-rpc-windows-x64.zip
+            release/discord-rpc.lib
